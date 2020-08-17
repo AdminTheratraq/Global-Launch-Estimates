@@ -1,0 +1,162 @@
+.main-content{
+    border: 3px solid #444444;
+    background: #ffffff;
+    box-sizing: border-box;
+}
+
+.container{
+    margin: 0 auto;
+    padding-top: 10px;
+}
+
+.header{
+    height: 40px;        
+    background: #444444;
+    width: 100%;
+    p {
+        text-align: center;
+        color:#ffffff;
+        font-size: 24px;  
+        margin: 0;          
+    }
+}
+
+.world-legend-container{
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+
+    .legend{
+        display: flex;
+        width:100%;
+        margin-bottom: 5px;
+        align-items: center;
+
+        .color{
+            width:50px;
+            height:50px;
+            margin-right: 5px;
+        }
+
+        .year{
+            font-weight: bold;
+        }
+    }
+}
+
+.datamaps-popup{
+    position: absolute;
+    top: 20%;
+    width: 250px;    
+    left: calc(50% - 125px);
+    background: #ffffff;
+    border: 2px solid #444444;
+    font-size: 18px;
+    padding: 30px;
+
+    a{
+        word-break: break-word;
+    }
+
+    .close-btn{
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 24px;
+        height: 24px;
+        border: 2px solid #444444;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+}
+
+.container-wrap{
+    display: flex;
+    width: 100%;
+
+    .region-map-wrap{
+        flex:1;
+        margin-right: 10px;
+        margin: 0 auto;
+
+        .region-header{
+            height: 70px;
+            background: rgb(75,80,98);
+            background: linear-gradient(180deg, rgba(75,80,98,1) 0%, rgba(92,99,120,1) 100%);
+            color: #ffffff;
+            font-size:24px;
+            font-weight: bold;
+            text-align: center;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            p{
+                margin:0;
+            }
+        }
+    }
+
+    .highlights{
+        flex:1;
+
+        .highlights-header{
+            height: 70px;
+            background: rgb(75,80,98);
+            background: linear-gradient(180deg, rgba(75,80,98,1) 0%, rgba(92,99,120,1) 100%);
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size:24px;
+            font-weight: bold;            
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+
+        .highlights-content{
+            li{
+                list-style-type: inherit;
+            }
+        }
+    }
+}
+
+.regional-legend-container{
+    position: absolute;
+    bottom: 0;
+    left:0px;    
+    overflow: auto;
+    display: flex;
+    box-sizing: border-box;
+    padding-left: 10px;
+
+    .legend{
+        display: flex;
+        width:100%;
+        margin-bottom: 10px;
+        align-items: center;
+        margin-right: 15px;
+
+        .color{
+            width:50px;
+            height:50px;
+            margin-right: 5px;
+        }
+
+        .year{
+            font-weight: bold;
+        }
+    }
+}
+
+
+@media print{
+    body {
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;        
+    }
+}

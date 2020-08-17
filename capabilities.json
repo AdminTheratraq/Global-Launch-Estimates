@@ -1,0 +1,158 @@
+{
+    "dataRoles": [
+        {
+            "displayName": "Company",
+            "name": "Company",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Region",
+            "name": "Region",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Country",
+            "name": "Country",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "DocumentLink",
+            "name": "DocumentLink",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Launch",
+            "name": "Launch",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Color",
+            "name": "Color",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Highlights",
+            "name": "Highlights",
+            "kind": "Grouping"
+        }
+    ],
+    "dataViewMappings": [
+        {
+            "table": {
+                "rows": {
+                    "select": [
+                        {
+                            "for": {
+                                "in": "Company"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "Region"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "Country"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "DocumentLink"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "Launch"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "Color"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "Highlights"
+                            }
+                        }
+                    ]
+                },
+                "columns": {
+                    "select": [
+                        {
+                            "for": {
+                                "in": "Company"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "Region"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "Country"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "DocumentLink"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "Launch"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "Color"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "Highlights"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "objects": {
+        "locations": {
+            "displayName": "Settings",
+            "properties": {
+                "title": {
+                    "displayName": "Title",
+                    "type": {
+                        "text": true
+                    }
+                },
+                "viewRegionalMap": {
+                    "displayName": "View Regional Map",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "viewHighlights": {
+                    "displayName": "View Highlights",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "defaultRegion": {
+                    "displayName": "Default Region",
+                    "type": {
+                        "text": true
+                    }
+                }
+            }
+        }
+    },
+    "sorting": {
+        "default": {}
+    },
+    "suppressDefaultTitle": true
+}
