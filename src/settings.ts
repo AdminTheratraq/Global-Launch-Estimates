@@ -34,11 +34,11 @@ export class VisualSettings extends DataViewObjectsParser {
 }
 
 export class LocationSettings {
-  public title: string = "";
+  public title: string = "Global Launch Estimates";
 
   public viewRegionalMap: boolean = false;
 
   public viewHighlights: boolean = false;
 
-  public defaultRegion: string = 'Europe';
+  public defaultRegion: string = "Europe";
 }
