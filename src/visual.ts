@@ -38,6 +38,8 @@ import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnume
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import DataViewObjects = powerbi.DataViewObjects;
 import IVisualEventService = powerbi.extensibility.IVisualEventService;
+import ISelectionManager = powerbi.extensibility.ISelectionManager;
+import ISelectionId = powerbi.visuals.ISelectionId;
 import * as d3 from 'd3';
 import { VisualSettings } from "./settings";
 import Datamap from 'datamaps';
@@ -46,11 +48,13 @@ import * as sanitizeHtml from 'sanitize-html';
 export interface GlobalFacilityLocation {
     Company: string;
     Region: string;
+    State: string;
     Country: string;
     DocumentLink: string;
     Launch: string;
     Color: string;
     Highlights: string;
+    selectionId: powerbi.visuals.ISelectionId;
 }
 
 export interface GlobalFacilityLocations {
@@ -97,16 +101,16 @@ export class Visual implements IVisual {
     private map: any;
     private yearColorData: any;
     private events: IVisualEventService;
+    private selectionManager: ISelectionManager;
 
     constructor(options: VisualConstructorOptions) {
-        console.log('Visual Constructor', options);
         this.target = d3.select(options.element);
         this.host = options.host;
         this.events = options.host.eventService;
+        this.selectionManager = options.host.createSelectionManager();
     }
 
     public update(options: VisualUpdateOptions) {
-        console.log('Visual Update ', options);
         this.events.renderingStarted(options);
         this.settings = Visual.parseSettings(options && options.dataViews && options.dataViews[0]);
         this.target.selectAll('*').remove();
@@ -117,6 +121,28 @@ export class Visual implements IVisual {
         let gWidth = options.viewport.width - this.margin.left - this.margin.right;
 
         let mapData = Visual.CONVERTER(options.dataViews[0], this.host);
+        mapData = mapData.slice(0, 1000);
+
+        this.target.on("contextmenu", () => {
+            const mouseEvent: MouseEvent = <MouseEvent> d3.event;
+            const eventTarget: any = mouseEvent.target;
+            let dataPoint: any = d3.select(eventTarget).datum();
+            let selectionId = null;
+            if (dataPoint) {
+                selectionId = this.getSelectionId(mapData, dataPoint?.Company ? dataPoint.selectionId : dataPoint?.properties?.name);
+                if (!selectionId) {
+                    selectionId = this.getSelectionId(mapData, dataPoint?.Company ? dataPoint.selectionId : dataPoint?.id);
+                }
+            }
+            this.selectionManager.showContextMenu(
+              dataPoint ? selectionId : {},
+              {
+                x: mouseEvent.clientX,
+                y: mouseEvent.clientY,
+              }
+            );
+            mouseEvent.preventDefault();
+          });
 
         let countryCodes = this.getCountryCodes();
 
@@ -144,18 +170,19 @@ export class Visual implements IVisual {
             this.renderWorldMapLegend(mainContent, options);
         }
         else {
+            
             let currentRegion = this.getCurrentRegion(mapData);
 
             this.renderRegionalMapTitle(header, currentRegion);
 
-            mapData = mapData.filter(d => d.Region === currentRegion);
+            if (currentRegion != "USA") {
+                mapData = mapData.filter(d => d.Region === currentRegion);
+            }
 
             let containerWrap = mainContent.append('div')
                 .attr('class', 'container-wrap');
 
             let regionMapWrap = this.createRegionMapWrapElement(containerWrap, options);
-
-            this.renderRegionalMapHeader(regionMapWrap, currentRegion);
 
             let regionMap = this.createRegionMapElement(regionMapWrap, options);
 
@@ -163,13 +190,106 @@ export class Visual implements IVisual {
 
             this.createHighlightsContainerElement(containerWrap, mapData);
 
-            this.renderRegionalMapLegend(mainContent);
+            this.renderRegionalMapLegend(mainContent, currentRegion);
         }
         this.events.renderingFinished(options);
     }
 
     private renderWorldMapTitle(header) {
-        header.append('p').text(this.settings.locations.title);
+        header.append('p').text(sanitizeHtml(this.settings.locations.title));
+    }
+
+    private getUSAStateCodes() {
+        return [
+            {
+                state: 'Arizona',
+                code: 'AZ'
+            }, {
+                state: 'Florida',
+                code: 'FL'
+            }, {
+                state: 'Georgia',
+                code: 'GA'
+            }, {
+                state: 'Illinois',
+                code: 'IL'
+            }, {
+                state: 'Los Angeles',
+                code: 'LA'
+            }, {
+                state: 'Maryland',
+                code: 'MD'
+            }, {
+                state: 'Maine',
+                code: 'ME'
+            }, {
+                state: 'Missouri',
+                code: 'MO'
+            }, {
+                state: 'North Carolina',
+                code: 'NC'
+            }, {
+                state: 'Nebraska',
+                code: 'NE'
+            }, {
+                state: 'Nevada',
+                code: 'NV'
+            }, {
+                state: 'New Jersey',
+                code: 'NJ'
+            }, {
+                state: 'New York',
+                code: 'NY'
+            }, {
+                state: 'Ohio',
+                code: 'OH'
+            }, {
+                state: 'Oklahoma',
+                code: 'OK'
+            }, {
+                state: 'Pennsylvania',
+                code: 'PA'
+            }, {
+                state: 'South Carolina',
+                code: 'SC'
+            }, {
+                state: 'South Dakota',
+                code: 'SD'
+            }, {
+                state: 'Tennessee',
+                code: 'TN'
+            }, {
+                state: 'Texas',
+                code: 'TX'
+            }, {
+                state: 'Utah',
+                code: 'UT'
+            }, {
+                state: 'Wisconsin',
+                code: 'WI'
+            }, {
+                state: 'Virginia',
+                code: 'VA'
+            }, {
+                state: 'Washington',
+                code: 'WA'
+            }, {
+                state: 'California',
+                code: 'CA'
+            }, {
+                state: 'Connecticut',
+                code: 'CT'
+            }, {
+                state: 'Alaska',
+                code: 'AK'
+            }, {
+                state: 'Arkansas',
+                code: 'AR'
+            }, {
+                state: 'Alabama',
+                code: 'AL'
+            }
+        ]
     }
 
     private getCountryCodes() {
@@ -290,10 +410,32 @@ export class Visual implements IVisual {
             let countryCode = countryCodes.find((c, i) => c.country.toLowerCase() === v.Country.toLowerCase());
             let yearColor = this.yearColorData.find((y, i) => y.Year === v.Launch);
             if (countryCode && countryCode.code && yearColor && yearColor.Color) {
-                colorData[countryCode.code] = { fillKey: yearColor.Color };
+                colorData[countryCode.code] = { fillKey: yearColor.Color, selectionId: v.selectionId };
             }
         });
         return colorData;
+    }
+
+    private getDatamapColorDataFromUSA(mapData, stateCodes) {
+        let colorData = {};
+        mapData.forEach((v, i) => {
+            let stateCode = stateCodes.find((c, i) => c.state.toLowerCase() === v.State.toLowerCase());
+            let yearColor = this.yearColorData.find((y, i) => y.Year === v.Launch);
+            if (stateCode && stateCode.code && yearColor && yearColor.Color) {
+                colorData[stateCode.code] = { fillKey: yearColor.Color, selectionId: v.selectionId };
+            }
+        });
+        return colorData;
+    }
+
+    private getSelectionId(mapData: any, country: string) {
+        let selectionId;
+        mapData.forEach((v) => {
+            if (v.Country === country) {
+                selectionId = v.selectionId;
+            };
+        })
+        return selectionId;
     }
 
     private renderWorldMap(mapData, countryCodes, container) {
@@ -315,7 +457,7 @@ export class Visual implements IVisual {
             fills: fills,
             data: data,
             done: (datamap) => {
-                datamap.svg.selectAll('.datamaps-subunit').on('click', (geography) => {
+                datamap.svg.data(mapData).selectAll('.datamaps-subunit').on('click', (geography) => {
                     let country = countryCodes.find((v, i) => v.code.toLowerCase() === geography.id.toLowerCase());
                     if (country && country.country) {
                         let doc = mapData.find((v, i) => v.Country === country.country);
@@ -383,20 +525,24 @@ export class Visual implements IVisual {
     private getCurrentRegion(mapData) {
         let currentRegion = '';
 
-        let distinctRegions = mapData.map(d => d.Region).filter((v, i, list) => list.indexOf(v) === i);
-
-        if (distinctRegions && distinctRegions.length === 1) {
-            currentRegion = distinctRegions[0].toString();
-        }
-        else {
+        if (this.settings.locations.viewRegionalMap && this.settings.locations.defaultRegion === "USA") {
             currentRegion = this.settings.locations.defaultRegion;
+        } else {
+            let distinctRegions = mapData.map(d => d.Region).filter((v, i, list) => list.indexOf(v) === i);
+
+            if (distinctRegions && distinctRegions.length === 1) {
+                currentRegion = distinctRegions[0].toString();
+            }
+            else {
+                currentRegion = this.settings.locations.defaultRegion;
+            }
         }
 
         return currentRegion;
     }
 
     private renderRegionalMapTitle(header, currentRegion) {
-        header.append('p').text(this.settings.locations.title + ' - ' + currentRegion);
+        header.append('p').text(sanitizeHtml(this.settings.locations.title + ' - ' + currentRegion));
     }
 
     private createRegionMapWrapElement(containerWrap, options) {
@@ -415,17 +561,6 @@ export class Visual implements IVisual {
         return regionMapWrap;
     }
 
-    private renderRegionalMapHeader(regionMapWrap, currentRegion) {
-        let regionHeader = regionMapWrap.append('div')
-            .attr('class', 'region-header');
-
-        regionHeader.append('p')
-            .text('Expected Market Entry:');
-
-        regionHeader.append('p')
-            .text(currentRegion);
-    }
-
     private createRegionMapElement(regionMapWrap, options) {
         let regionMap;
         if (this.settings.locations.viewHighlights) {
@@ -442,6 +577,32 @@ export class Visual implements IVisual {
         return regionMap;
     }
 
+    private getUSAStateMap(mapData, regionMap, fills, self) {
+
+        let stateCodes = this.getUSAStateCodes();
+
+            let data = this.getDatamapColorDataFromUSA(mapData, stateCodes);
+
+            let map = new Datamap({
+                element: regionMap.node(),
+                scope: 'usa',
+                fills: fills,
+                data: data,
+                done: (datamap) => {
+                    datamap.svg.attr("style", "margin-top:50;height:590;overflow: inherit;");
+                    datamap.svg.data(mapData).selectAll('.datamaps-subunit').on('click', (geography) => {
+                        let state = stateCodes.find((v, i) => v.code.toLowerCase() === geography.id.toLowerCase());
+                        if (state && state.state) {
+                            let document = mapData.find((v, i) => v.State === state.state);
+                            if (document && document.DocumentLink) {
+                                self.host.launchUrl(document.DocumentLink);
+                            }
+                        }
+                    });
+                }
+            });
+    }
+
     private renderRegionalMap(mapData, countryCodes, regionMap, currentRegion) {
         let self = this;
         let fills = this.getDefaultFills();
@@ -452,75 +613,84 @@ export class Visual implements IVisual {
 
         this.applyFills(fills);
 
-        let data = this.getDatamapColorData(mapData, countryCodes);
+        if (currentRegion !=  "USA") {
 
-        let map = new Datamap({
-            element: regionMap.node(),
-            scope: 'world',
-            setProjection: (element) => {
-                if (currentRegion === 'Europe') {
-                    let projection = d3.geoMercator()
-                        .center([15.2551, 58])
-                        .scale(425)
-                        .translate([element.offsetWidth / 2, element.offsetHeight / 2]);
-                    let path = d3.geoPath()
-                        .projection(projection);
+            let data = this.getDatamapColorData(mapData, countryCodes);
 
-                    return { path: path, projection: projection };
-                } else if (currentRegion === 'Asia') {
-                    let projection = d3.geoMercator()
-                        .center([125, 30])
-                        .scale(325)
-                        .translate([element.offsetWidth / 2, element.offsetHeight / 2]);
-                    let path = d3.geoPath()
-                        .projection(projection);
-
-                    return { path: path, projection: projection };
-                }
-                else if (currentRegion === 'Lat-Am') {
-                    let projection = d3.geoMercator()
-                        .center([-60, -25])
-                        .scale(350)
-                        .translate([element.offsetWidth / 2, element.offsetHeight / 2]);
-                    let path = d3.geoPath()
-                        .projection(projection);
-
-                    return { path: path, projection: projection };
-                } else if (currentRegion === 'NA') {
-                    let projection = d3.geoMercator()
-                        .center([-110, 67])
-                        .scale(190)
-                        .translate([element.offsetWidth / 2, element.offsetHeight / 2]);
-                    let path = d3.geoPath()
-                        .projection(projection);
-
-                    return { path: path, projection: projection };
-                }
-                else if (currentRegion === 'AfME') {
-                    let projection = d3.geoMercator()
-                        .center([30, 10])
-                        .scale(300)
-                        .translate([element.offsetWidth / 2, element.offsetHeight / 2]);
-                    let path = d3.geoPath()
-                        .projection(projection);
-
-                    return { path: path, projection: projection };
-                }
-            },
-            fills: fills,
-            data: data,
-            done: (datamap) => {
-                datamap.svg.selectAll('.datamaps-subunit').on('click', (geography) => {
-                    let country = countryCodes.find((v, i) => v.code.toLowerCase() === geography.id.toLowerCase());
-                    if (country && country.country) {
-                        let document = mapData.find((v, i) => v.Country === country.country);
-                        if (document && document.DocumentLink) {
-                            self.host.launchUrl(document.DocumentLink);
-                        }
+            let map = new Datamap({
+                element: regionMap.node(),
+                scope: 'world',
+                setProjection: (element) => {
+                    if (currentRegion === 'Europe') {
+                        let projection = d3.geoMercator()
+                            .center([15.2551, 58])
+                            .scale(425)
+                            .translate([element.offsetWidth / 2, element.offsetHeight / 2]);
+                        let path = d3.geoPath()
+                            .projection(projection);
+    
+                        return { path: path, projection: projection };
+                    } else if (currentRegion === 'Asia') {
+                        let projection = d3.geoMercator()
+                            .center([125, 30])
+                            .scale(325)
+                            .translate([element.offsetWidth / 2, element.offsetHeight / 2]);
+                        let path = d3.geoPath()
+                            .projection(projection);
+    
+                        return { path: path, projection: projection };
                     }
-                });
-            }
-        });
+                    else if (currentRegion === 'Lat-Am') {
+                        let projection = d3.geoMercator()
+                            .center([-60, -25])
+                            .scale(350)
+                            .translate([element.offsetWidth / 2, element.offsetHeight / 2]);
+                        let path = d3.geoPath()
+                            .projection(projection);
+    
+                        return { path: path, projection: projection };
+                    } else if (currentRegion === 'NA') {
+                        let projection = d3.geoMercator()
+                            .center([-110, 67])
+                            .scale(190)
+                            .translate([element.offsetWidth / 2, element.offsetHeight / 2]);
+                        let path = d3.geoPath()
+                            .projection(projection);
+    
+                        return { path: path, projection: projection };
+                    }
+                    else if (currentRegion === 'AfME') {
+                        let projection = d3.geoMercator()
+                            .center([30, 10])
+                            .scale(300)
+                            .translate([element.offsetWidth / 2, element.offsetHeight / 2]);
+                        let path = d3.geoPath()
+                            .projection(projection);
+    
+                        return { path: path, projection: projection };
+                    }
+                },
+                fills: fills,
+                data: data,
+                done: (datamap) => {
+                    datamap.svg.attr("style", "height:600");
+                    datamap.svg.data(mapData).selectAll('.datamaps-subunit').on('click', (geography) => {
+                        let country = countryCodes.find((v, i) => v.code.toLowerCase() === geography.id.toLowerCase());
+                        if (country && country.country) {
+                            let document = mapData.find((v, i) => v.Country === country.country);
+                            if (document && document.DocumentLink) {
+                                self.host.launchUrl(document.DocumentLink);
+                            }
+                        }
+                    });
+                }
+            });
+        } else if (currentRegion === "USA") {
+
+            this.getUSAStateMap(mapData,regionMap, fills, self);
+
+        }
+
     }
 
     private createHighlightsContainerElement(containerWrap, mapData: GlobalFacilityLocation[]) {
@@ -540,9 +710,15 @@ export class Visual implements IVisual {
         }
     }
 
-    private renderRegionalMapLegend(mainContent) {
-        let legendContainer = mainContent.append('div')
+    private renderRegionalMapLegend(mainContent, currentRegion) {
+        let legendContainer;
+        if (currentRegion !== "USA") {
+            legendContainer = mainContent.append('div')
             .attr('class', 'regional-legend-container')
+        } else if (currentRegion === "USA") {
+            legendContainer = mainContent.append('div')
+            .attr('class', 'regional-legend-container').attr("style", "bottom:5px;left:5px;flex-direction: column;justify-content: flex-end;")
+        }
 
         let legend = legendContainer.selectAll('.legend')
             .data(this.yearColorData)
@@ -569,13 +745,15 @@ export class Visual implements IVisual {
         let tableView = dataView.table;
         let _rows = tableView.rows;
         let _columns = tableView.columns;
-        let _companyIndex = -1, _regionIndex = -1, _countryIndex = -1, _docIndex = -1,
+        let _companyIndex = -1, _regionIndex = -1, _stateIndex = -1, _countryIndex = -1, _docIndex = -1,
             _launchIndex = -1, _colorIndex = -1, _highlightsIndex = -1;
         for (let ti = 0; ti < _columns.length; ti++) {
             if (_columns[ti].roles.hasOwnProperty("Company")) {
                 _companyIndex = ti;
             } else if (_columns[ti].roles.hasOwnProperty("Region")) {
                 _regionIndex = ti;
+            } else if (_columns[ti].roles.hasOwnProperty("State")) {
+                _stateIndex = ti;
             } else if (_columns[ti].roles.hasOwnProperty("Country")) {
                 _countryIndex = ti;
             } else if (_columns[ti].roles.hasOwnProperty("DocumentLink")) {
@@ -593,12 +771,13 @@ export class Visual implements IVisual {
             let dp = {
                 Company: row[_companyIndex] ? row[_companyIndex].toString() : null,
                 Region: row[_regionIndex] ? row[_regionIndex].toString() : null,
+                State: row[_stateIndex] ? row[_stateIndex].toString() : null,
                 Country: row[_countryIndex] ? row[_countryIndex].toString() : null,
                 DocumentLink: row[_docIndex] ? row[_docIndex].toString() : null,
                 Launch: row[_launchIndex] ? row[_launchIndex].toString() : null,
                 Color: row[_colorIndex] ? row[_colorIndex].toString() : null,
-                Highlights: row[_highlightsIndex] ? row[_highlightsIndex].toString() : null
-                //selectionId:host.createSelectionIdBuilder().createSelectionId()
+                Highlights: row[_highlightsIndex] ? row[_highlightsIndex].toString() : null,
+                selectionId:host.createSelectionIdBuilder().withTable(tableView, i).createSelectionId()
             };
             resultData.push(dp);
         }
