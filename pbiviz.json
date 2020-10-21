@@ -1,25 +1,25 @@
 {
-  "visual": {
-    "name": "globalLaunchEstimates",
-    "displayName": "global Launch Estimates",
-    "guid": "globalLaunchEstimatesC8C997C958BD4E22BB25D5639F3366A1",
-    "visualClassName": "Visual",
-    "version": "1.0.2",
-    "description": "global Launch Estimates",
-    "supportUrl": "https://sharepointwebpartassets.blob.core.windows.net/$web/global-launch-estimates.html",
-    "gitHubUrl": ""
-  },
-  "apiVersion": "2.6.0",
-  "author": {
-    "name": "TheraTraQ",
-    "email": "powerbi-support@theratraq.com"
-  },
-  "assets": {
-    "icon": "assets/icon.png"
-  },
-  "externalJS": null,
-  "style": "style/visual.less",
-  "capabilities": "capabilities.json",
-  "dependencies": null,
-  "stringResources": []
+    "visual": {
+        "name": "globalLaunchEstimates",
+        "displayName": "global Launch Estimates",
+        "guid": "globalLaunchEstimatesC8C997C958BD4E22BB25D5639F3366A1",
+        "visualClassName": "Visual",
+        "version": "1.0.3",
+        "description": "global Launch Estimates",
+        "supportUrl": "https://sharepointwebpartassets.blob.core.windows.net/$web/global-launch-estimates.html",
+        "gitHubUrl": ""
+    },
+    "apiVersion": "2.6.0",
+    "author": {
+        "name": "TheraTraQ",
+        "email": "powerbi-support@theratraq.com"
+    },
+    "assets": {
+        "icon": "assets/icon.png"
+    },
+    "externalJS": null,
+    "style": "style/visual.less",
+    "capabilities": "capabilities.json",
+    "dependencies": null,
+    "stringResources": []
 }

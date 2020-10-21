@@ -11,6 +11,11 @@
             "kind": "Grouping"
         },
         {
+            "displayName": "State",
+            "name": "State",
+            "kind": "Grouping"
+        },
+        {
             "displayName": "Country",
             "name": "Country",
             "kind": "Grouping"
@@ -53,6 +58,11 @@
                         },
                         {
                             "for": {
+                                "in": "State"
+                            }
+                        },
+                        {
+                            "for": {
                                 "in": "Country"
                             }
                         },
@@ -88,6 +98,11 @@
                         {
                             "for": {
                                 "in": "Region"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "State"
                             }
                         },
                         {

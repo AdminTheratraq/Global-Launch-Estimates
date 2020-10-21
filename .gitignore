@@ -8,3 +8,6 @@ typings
 .vscode
 
 webpack.statistics.*.html
+/.vs/slnx.sqlite
+/.vs/ProjectSettings.json
+/.vs/Global-Launch-Estimates/config/applicationhost.config
