@@ -4,7 +4,7 @@
         "displayName": "global Launch Estimates",
         "guid": "globalLaunchEstimatesC8C997C958BD4E22BB25D5639F3366A1",
         "visualClassName": "Visual",
-        "version": "1.0.3",
+        "version": "1.0.4",
         "description": "global Launch Estimates",
         "supportUrl": "https://sharepointwebpartassets.blob.core.windows.net/$web/global-launch-estimates.html",
         "gitHubUrl": ""

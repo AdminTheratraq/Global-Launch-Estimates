@@ -39,6 +39,16 @@
             "displayName": "Highlights",
             "name": "Highlights",
             "kind": "Grouping"
+        },
+        {
+            "displayName": "Header Image",
+            "name": "HeaderImage",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Footer Image",
+            "name": "FooterImage",
+            "kind": "Grouping"
         }
     ],
     "dataViewMappings": [
@@ -85,6 +95,16 @@
                             "for": {
                                 "in": "Highlights"
                             }
+                        },
+                        {
+                            "for": {
+                                "in": "HeaderImage"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "FooterImage"
+                            }
                         }
                     ]
                 },
@@ -129,6 +149,16 @@
                             "for": {
                                 "in": "Highlights"
                             }
+                        },
+                        {
+                            "for": {
+                                "in": "HeaderImage"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "FooterImage"
+                            }
                         }
                     ]
                 }
@@ -161,6 +191,18 @@
                     "displayName": "Default Region",
                     "type": {
                         "text": true
+                    }
+                },
+                "headerImage": {
+                    "displayName": "Header Image",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "footerImage": {
+                    "displayName": "Footer Image",
+                    "type": {
+                        "bool": true
                     }
                 }
             }

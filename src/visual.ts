@@ -44,6 +44,7 @@ import * as d3 from 'd3';
 import { VisualSettings } from "./settings";
 import Datamap from 'datamaps';
 import * as sanitizeHtml from 'sanitize-html';
+import * as validDataUrl from 'valid-data-url';
 
 export interface GlobalFacilityLocation {
     Company: string;
@@ -54,6 +55,8 @@ export interface GlobalFacilityLocation {
     Launch: string;
     Color: string;
     Highlights: string;
+    HeaderImage: string;
+    FooterImage: string;
     selectionId: powerbi.visuals.ISelectionId;
 }
 
@@ -70,8 +73,6 @@ export function logExceptions(): MethodDecorator {
                 try {
                     return descriptor.value.apply(this, arguments);
                 } catch (e) {
-                    // this.svg.append('text').text(e).style("stroke","black")
-                    // .attr("dy", "1em");
                     throw e;
                 }
             }
@@ -94,6 +95,8 @@ export function getCategoricalObjectValue<T>(objects: DataViewObjects, index: nu
 
 export class Visual implements IVisual {
     private target: d3.Selection<HTMLElement, any, any, any>;
+    private header: d3.Selection<HTMLElement, any, any, any>;
+    private footer: d3.Selection<HTMLElement, any, any, any>;
     private container: HTMLElement;
     private margin = { top: 50, right: 40, bottom: 50, left: 40 };
     private settings: VisualSettings;
@@ -101,10 +104,15 @@ export class Visual implements IVisual {
     private map: any;
     private yearColorData: any;
     private events: IVisualEventService;
+    private headerImgHeight = 0;
+    private footerImgHeight = 0;
+    private mainContentHeight = 0;
     private selectionManager: ISelectionManager;
 
     constructor(options: VisualConstructorOptions) {
-        this.target = d3.select(options.element);
+        this.header = d3.select(options.element).append('div');
+        this.target = d3.select(options.element).append('div');
+        this.footer = d3.select(options.element).append('div');
         this.host = options.host;
         this.events = options.host.eventService;
         this.selectionManager = options.host.createSelectionManager();
@@ -144,13 +152,18 @@ export class Visual implements IVisual {
             mouseEvent.preventDefault();
           });
 
+        this.renderHeaderAndFooter(mapData, options);
+
         let countryCodes = this.getCountryCodes();
 
         let mainContent = this.target.append('div')
             .attr('class', 'main-content');
-
+        
+        this.mainContentHeight = options.viewport.height;
+        if  (this.settings.locations.headerImage && this.settings.locations.footerImage) { this.mainContentHeight = options.viewport.height - 210; } else if (this.settings.locations.headerImage || this.settings.locations.footerImage) { this.mainContentHeight = options.viewport.height - 105; }
+        
         mainContent.style('position', 'relative')
-            .style('height', (options.viewport.height) + 'px')
+            .style('height', (this.mainContentHeight) + 'px')
             .style('width', (options.viewport.width) + 'px');
 
         let header = mainContent.append('div')
@@ -159,11 +172,14 @@ export class Visual implements IVisual {
         if (!this.settings.locations.viewRegionalMap) {
             this.renderWorldMapTitle(header);
 
+            let mapWidth = options.viewport.width - 266;
+            if (this.settings.locations.headerImage && this.settings.locations.footerImage) { mapWidth = 620; } else if (this.settings.locations.headerImage || this.settings.locations.footerImage) { mapWidth = 500;}
+
             let container = mainContent.append('div')
                 .attr('class', 'container')
                 .style('position', 'relative')
                 .style('height', (options.viewport.height - 60.13) + 'px')
-                .style('width', (options.viewport.width - 266) + 'px');
+                .style('width', (mapWidth) + 'px');
 
             this.renderWorldMap(mapData, countryCodes, container);
 
@@ -193,6 +209,62 @@ export class Visual implements IVisual {
             this.renderRegionalMapLegend(mainContent, currentRegion);
         }
         this.events.renderingFinished(options);
+    }
+
+    private renderHeaderAndFooter(mapData: GlobalFacilityLocation[], options) {
+        let viewportHeight = options.viewport.height;
+        let viewportwidth = options.viewport.width;
+        let layoutContentHeight = 0;
+
+        let [globalFacility] = mapData;
+        // sanitized user input from settings
+        if (this.settings.locations.headerImage) {
+            let headerImage = new Image();
+            headerImage.onload = () => {
+                this.headerImgHeight = headerImage.height;
+                layoutContentHeight += headerImage.height;
+                this.target.attr('style', 'height:' + (viewportHeight - layoutContentHeight) + 'px;width:' + (viewportwidth) + 'px');
+                // removed .html() method and built DOM using append method
+                this.header
+                    .attr('class', 'visual-header')
+                    .attr('style', 'height:' + this.headerImgHeight + 'px;')
+                    .append('img')
+                    .attr('src', validDataUrl(globalFacility.HeaderImage) ? globalFacility.HeaderImage : '');
+            }
+            if (validDataUrl(globalFacility.HeaderImage)) {
+                headerImage.src = globalFacility.HeaderImage;
+            }
+        }
+        else {
+            this.header.selectAll('img').remove();
+            this.header.classed('visual-header', false);
+            this.header.style('height', 'auto');
+        }
+
+        // sanitized user input from settings
+        if (this.settings.locations.footerImage) {
+            let footerImage = new Image();
+            footerImage.onload = () => {
+                this.footerImgHeight = footerImage.height;
+                layoutContentHeight += footerImage.height;
+                this.target.attr('style', 'height:' + (viewportHeight - layoutContentHeight) + 'px;width:' + (viewportwidth) + 'px');
+                // removed .html() method and built DOM using append method
+                this.footer
+                    .attr('class', 'visual-footer')
+                    .attr('style', 'height:' + this.footerImgHeight + 'px;')
+                    .append('img')
+                    .attr('src', validDataUrl(globalFacility.FooterImage) ? globalFacility.FooterImage : '');
+            }
+            if (validDataUrl(globalFacility.FooterImage)) {
+                footerImage.src = globalFacility.FooterImage;
+            }
+        }
+        else {
+            this.footer.selectAll('img').remove();
+            this.footer.classed('visual-footer', false);
+            this.footer.style('height', 'auto');
+        }
+
     }
 
     private renderWorldMapTitle(header) {
@@ -441,6 +513,8 @@ export class Visual implements IVisual {
     private renderWorldMap(mapData, countryCodes, container) {
         let self = this;
 
+        let mapHeight = 0;
+
         let fills = this.getDefaultFills();
 
         let distinctYears = this.getDistinctYears(mapData)
@@ -451,10 +525,17 @@ export class Visual implements IVisual {
 
         let data = this.getDatamapColorData(mapData, countryCodes);
 
+        if (this.settings.locations.headerImage && this.settings.locations.footerImage) {
+            mapHeight = 450;
+        } else if (this.settings.locations.headerImage || this.settings.locations.footerImage) {
+            mapHeight = 550;
+        }
+
         let map = new Datamap({
             element: container.node(),
             projection: 'mercator',
             fills: fills,
+            height: mapHeight, 
             data: data,
             done: (datamap) => {
                 datamap.svg.data(mapData).selectAll('.datamaps-subunit').on('click', (geography) => {
@@ -563,21 +644,42 @@ export class Visual implements IVisual {
 
     private createRegionMapElement(regionMapWrap, options) {
         let regionMap;
+        let regionWidth = options.viewport.width;
+        let regionHeight = options.viewport.height - 105;
+
+        if (this.settings.locations.headerImage && this.settings.locations.footerImage) {
+            regionWidth = (this.settings.locations.defaultRegion === "USA") ? (options.viewport.width - 300) : (options.viewport.width - 595);
+            regionHeight = options.viewport.height - 595;
+        } else if (this.settings.locations.headerImage || this.settings.locations.footerImage) {
+            regionWidth = (this.settings.locations.defaultRegion === "USA") ? (options.viewport.width - 150) : regionWidth;
+            regionHeight = options.viewport.height - 195;
+        }
+
         if (this.settings.locations.viewHighlights) {
+            let regionMapWidth = (this.settings.locations.headerImage && this.settings.locations.footerImage) ? regionWidth : (regionWidth - 395);
+            regionMapWidth = (this.settings.locations.defaultRegion === "USA") ? regionWidth : regionMapWidth;
             regionMap = regionMapWrap.append('div')
                 .attr('class', 'region-map')
-                .style('height', (options.viewport.height - 195) + 'px')
-                .style('width', ((options.viewport.width * 70 / 100)) + 'px');
+                .style('height', (regionHeight) + 'px')
+                .style('width', (regionMapWidth) + 'px');
         } else {
             regionMap = regionMapWrap.append('div')
                 .attr('class', 'region-map')
-                .style('height', (options.viewport.height - 195) + 'px')
-                .style('width', (options.viewport.width) + 'px');
+                .style('height', (regionHeight) + 'px')
+                .style('width', (regionWidth) + 'px');
         }
         return regionMap;
     }
 
     private getUSAStateMap(mapData, regionMap, fills, self) {
+
+        let USAStateHeight = 0;
+
+        if (this.settings.locations.headerImage && this.settings.locations.footerImage) {
+            USAStateHeight = 350;
+        } else if (this.settings.locations.headerImage || this.settings.locations.footerImage) {
+            USAStateHeight = 450;
+        }
 
         let stateCodes = this.getUSAStateCodes();
 
@@ -588,6 +690,7 @@ export class Visual implements IVisual {
                 scope: 'usa',
                 fills: fills,
                 data: data,
+                height: USAStateHeight,
                 done: (datamap) => {
                     datamap.svg.attr("style", "margin-top:50;height:590;overflow: inherit;");
                     datamap.svg.data(mapData).selectAll('.datamaps-subunit').on('click', (geography) => {
@@ -606,12 +709,11 @@ export class Visual implements IVisual {
     private renderRegionalMap(mapData, countryCodes, regionMap, currentRegion) {
         let self = this;
         let fills = this.getDefaultFills();
-
         let distinctYears = mapData.map(v => v.Launch).filter((v, i, list) => list.indexOf(v) === i).sort((a: any, b: any) => a - b);
-
         this.yearColorData = this.getYearColorData(mapData, distinctYears);
-
         this.applyFills(fills);
+        let regionHeight = 0;
+        if (this.settings.locations.headerImage && this.settings.locations.footerImage) { regionHeight = 390 } else if (this.settings.locations.headerImage || this.settings.locations.footerImage) { regionHeight = 490 };
 
         if (currentRegion !=  "USA") {
 
@@ -621,59 +723,66 @@ export class Visual implements IVisual {
                 element: regionMap.node(),
                 scope: 'world',
                 setProjection: (element) => {
+                    let coordinationX,coordinationY,zoom;
                     if (currentRegion === 'Europe') {
-                        let projection = d3.geoMercator()
-                            .center([15.2551, 58])
-                            .scale(425)
-                            .translate([element.offsetWidth / 2, element.offsetHeight / 2]);
-                        let path = d3.geoPath()
-                            .projection(projection);
-    
-                        return { path: path, projection: projection };
+                        if (this.settings.locations.headerImage && this.settings.locations.footerImage) {
+                            coordinationX = 15.2551;coordinationY = 75;zoom = 225;
+                        } else if (this.settings.locations.headerImage || this.settings.locations.footerImage) {
+                            coordinationX = 15.2551;coordinationY = 58;zoom = 325;
+                        } else {
+                            coordinationX = 15.2551;coordinationY = 58;zoom = 425;
+                        }
                     } else if (currentRegion === 'Asia') {
-                        let projection = d3.geoMercator()
-                            .center([125, 30])
-                            .scale(325)
-                            .translate([element.offsetWidth / 2, element.offsetHeight / 2]);
-                        let path = d3.geoPath()
-                            .projection(projection);
-    
-                        return { path: path, projection: projection };
+                        if (this.settings.locations.headerImage && this.settings.locations.footerImage) {
+                            coordinationX = 100;coordinationY = 55;zoom = 215;
+                        } else if (this.settings.locations.headerImage || this.settings.locations.footerImage) {
+                            coordinationX = 160;coordinationY = 30;zoom = 250;
+                            if (this.settings.locations.viewHighlights) { coordinationX = 130;coordinationY = 30;zoom = 220; }
+                        } else {
+                            coordinationX = 125;coordinationY = 30;zoom = 325;
+                        }
                     }
                     else if (currentRegion === 'Lat-Am') {
-                        let projection = d3.geoMercator()
-                            .center([-60, -25])
-                            .scale(350)
-                            .translate([element.offsetWidth / 2, element.offsetHeight / 2]);
-                        let path = d3.geoPath()
-                            .projection(projection);
-    
-                        return { path: path, projection: projection };
+
+                        if (this.settings.locations.headerImage && this.settings.locations.footerImage) {
+                            coordinationX = -50;coordinationY = 10;zoom = 210;
+                        } else if (this.settings.locations.headerImage || this.settings.locations.footerImage) {
+                            coordinationX = -75;coordinationY = -25;zoom = 300;
+                        } else {
+                            coordinationX = -60;coordinationY = -25;zoom = 350;
+                        }
                     } else if (currentRegion === 'NA') {
-                        let projection = d3.geoMercator()
-                            .center([-110, 67])
-                            .scale(190)
-                            .translate([element.offsetWidth / 2, element.offsetHeight / 2]);
-                        let path = d3.geoPath()
-                            .projection(projection);
-    
-                        return { path: path, projection: projection };
+                        if (this.settings.locations.headerImage && this.settings.locations.footerImage) {
+                            coordinationX = -110;coordinationY = 82;zoom = 120;
+                        } else if (this.settings.locations.headerImage || this.settings.locations.footerImage) {
+                            coordinationX = -110;coordinationY = 67;zoom = 140;
+                        } else {
+                            coordinationX = -110;coordinationY = 67;zoom = 190;
+                        }
                     }
                     else if (currentRegion === 'AfME') {
+                        if (this.settings.locations.headerImage && this.settings.locations.footerImage) {
+                            coordinationX = 30;coordinationY = 30;zoom = 270;
+                        } else if (this.settings.locations.headerImage || this.settings.locations.footerImage) {
+                            coordinationX = 30;coordinationY = 2;zoom = 340;
+                        } else {
+                            coordinationX = 30;coordinationY = 4;zoom = 430;
+                        }
+                    }
+                    if (zoom) {
                         let projection = d3.geoMercator()
-                            .center([30, 10])
-                            .scale(300)
+                            .center([coordinationX, coordinationY])
+                            .scale(zoom)
                             .translate([element.offsetWidth / 2, element.offsetHeight / 2]);
                         let path = d3.geoPath()
                             .projection(projection);
-    
                         return { path: path, projection: projection };
                     }
                 },
                 fills: fills,
+                height: regionHeight,
                 data: data,
                 done: (datamap) => {
-                    datamap.svg.attr("style", "height:600");
                     datamap.svg.data(mapData).selectAll('.datamaps-subunit').on('click', (geography) => {
                         let country = countryCodes.find((v, i) => v.code.toLowerCase() === geography.id.toLowerCase());
                         if (country && country.country) {
@@ -704,9 +813,11 @@ export class Visual implements IVisual {
 
             // here we are using html method because the column or property Highlights has value as HTML content (Rich text)
             let [map] = mapData;
-            highlights.append('div')
+            if (map.Highlights) {
+                highlights.append('div')
                 .attr('class', 'highlights-content')
                 .html(sanitizeHtml(map.Highlights) ? sanitizeHtml(map.Highlights.toString()) : '');
+            }
         }
     }
 
@@ -746,7 +857,7 @@ export class Visual implements IVisual {
         let _rows = tableView.rows;
         let _columns = tableView.columns;
         let _companyIndex = -1, _regionIndex = -1, _stateIndex = -1, _countryIndex = -1, _docIndex = -1,
-            _launchIndex = -1, _colorIndex = -1, _highlightsIndex = -1;
+            _launchIndex = -1, _colorIndex = -1, _highlightsIndex = -1, _headerImageIndex = -1, _footerImageIndex = -1;
         for (let ti = 0; ti < _columns.length; ti++) {
             if (_columns[ti].roles.hasOwnProperty("Company")) {
                 _companyIndex = ti;
@@ -764,6 +875,10 @@ export class Visual implements IVisual {
                 _colorIndex = ti;
             } else if (_columns[ti].roles.hasOwnProperty("Highlights")) {
                 _highlightsIndex = ti;
+            } else if (_columns[ti].roles.hasOwnProperty("HeaderImage")) {
+                _headerImageIndex = ti;
+            } else if (_columns[ti].roles.hasOwnProperty("FooterImage")) {
+                _footerImageIndex = ti;
             }
         }
         for (let i = 0; i < _rows.length; i++) {
@@ -777,6 +892,8 @@ export class Visual implements IVisual {
                 Launch: row[_launchIndex] ? row[_launchIndex].toString() : null,
                 Color: row[_colorIndex] ? row[_colorIndex].toString() : null,
                 Highlights: row[_highlightsIndex] ? row[_highlightsIndex].toString() : null,
+                HeaderImage: row[_headerImageIndex] ? row[_headerImageIndex].toString() : null,
+                FooterImage: row[_footerImageIndex] ? row[_footerImageIndex].toString() : null,
                 selectionId:host.createSelectionIdBuilder().withTable(tableView, i).createSelectionId()
             };
             resultData.push(dp);

@@ -11,3 +11,5 @@ webpack.statistics.*.html
 /.vs/slnx.sqlite
 /.vs/ProjectSettings.json
 /.vs/Global-Launch-Estimates/config/applicationhost.config
+/.vs/Global-Launch-Estimates/v16/.suo
+/.vs/VSWorkspaceState.json

@@ -41,4 +41,8 @@ export class LocationSettings {
   public viewHighlights: boolean = false;
 
   public defaultRegion: string = 'Europe';
+
+  public headerImage: boolean = false;
+
+  public footerImage: boolean = false;
 }
