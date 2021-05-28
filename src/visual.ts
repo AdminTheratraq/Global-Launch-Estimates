@@ -130,16 +130,24 @@ export class Visual implements IVisual {
 
         let mapData = Visual.CONVERTER(options.dataViews[0], this.host);
         mapData = mapData.slice(0, 1000);
+        let finalMapData: GlobalFacilityLocation[]=[];
+        let currentDate, previousyear:number, futureyear:number;
+        currentDate = new Date();
+        previousyear = currentDate.getFullYear() - 1;
+        futureyear = currentDate.getFullYear() + 8;
 
+        for (let i=previousyear; i<=futureyear;i++) {
+            mapData.filter((data) => { if (data.Launch === i.toString()) { finalMapData.push(data) } });
+        }
         this.target.on("contextmenu", () => {
             const mouseEvent: MouseEvent = <MouseEvent> d3.event;
             const eventTarget: any = mouseEvent.target;
             let dataPoint: any = d3.select(eventTarget).datum();
             let selectionId = null;
             if (dataPoint) {
-                selectionId = this.getSelectionId(mapData, dataPoint?.Company ? dataPoint.selectionId : dataPoint?.properties?.name);
+                selectionId = this.getSelectionId(finalMapData, dataPoint?.Company ? dataPoint.selectionId : dataPoint?.properties?.name);
                 if (!selectionId) {
-                    selectionId = this.getSelectionId(mapData, dataPoint?.Company ? dataPoint.selectionId : dataPoint?.id);
+                    selectionId = this.getSelectionId(finalMapData, dataPoint?.Company ? dataPoint.selectionId : dataPoint?.id);
                 }
             }
             this.selectionManager.showContextMenu(
@@ -152,7 +160,7 @@ export class Visual implements IVisual {
             mouseEvent.preventDefault();
           });
 
-        this.renderHeaderAndFooter(mapData, options);
+        this.renderHeaderAndFooter(finalMapData, options);
 
         let countryCodes = this.getCountryCodes();
 
@@ -181,18 +189,18 @@ export class Visual implements IVisual {
                 .style('height', (options.viewport.height - 60.13) + 'px')
                 .style('width', (mapWidth) + 'px');
 
-            this.renderWorldMap(mapData, countryCodes, container);
+            this.renderWorldMap(finalMapData, countryCodes, container);
 
             this.renderWorldMapLegend(mainContent, options);
         }
         else {
             
-            let currentRegion = this.getCurrentRegion(mapData);
+            let currentRegion = this.getCurrentRegion(finalMapData);
 
             this.renderRegionalMapTitle(header, currentRegion);
 
             if (currentRegion != "USA") {
-                mapData = mapData.filter(d => d.Region === currentRegion);
+                finalMapData = finalMapData.filter(d => d.Region === currentRegion);
             }
 
             let containerWrap = mainContent.append('div')
@@ -202,9 +210,9 @@ export class Visual implements IVisual {
 
             let regionMap = this.createRegionMapElement(regionMapWrap, options);
 
-            this.renderRegionalMap(mapData, countryCodes, regionMap, currentRegion);
+            this.renderRegionalMap(finalMapData, countryCodes, regionMap, currentRegion);
 
-            this.createHighlightsContainerElement(containerWrap, mapData);
+            this.createHighlightsContainerElement(containerWrap, finalMapData);
 
             this.renderRegionalMapLegend(mainContent, currentRegion);
         }
