@@ -24,7 +24,7 @@
 *  THE SOFTWARE.
 */
 "use strict";
-
+import "regenerator-runtime/runtime";
 import "core-js/stable";
 import "./../style/visual.less";
 import powerbi from "powerbi-visuals-api";
